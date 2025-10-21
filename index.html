@@ -378,6 +378,58 @@ window.onclick=function(event){ if(event.target==modal){ modal.style.display="no
 
 createTable(); // สร้างตารางเริ่มต้น
 });
+</script><!-- ปุ่มบันทึกขึ้นคลาวด์ -->
+<div style="text-align:center; margin-top:10px;">
+  <button id="uploadToCloudBtn" style="background:linear-gradient(to bottom,#4caf50,#2e7d32); border:1px solid #1b5e20;">
+    ☁️ บันทึกข้อมูลขึ้นคลาวด์ (Google Sheets)
+  </button>
+</div>
+
+<script>
+// ====== ลิงก์ Google Apps Script ======
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdzMJYe-kV-WErEWa0l0PClM84lWp5INp7GlRyRx4vy52ujufsp0yJIHgHeo_7ptY94Q/exec";
+
+// ====== ปุ่มบันทึกข้อมูลขึ้นคลาวด์ ======
+document.getElementById("uploadToCloudBtn").addEventListener("click", async () => {
+  if (!confirm("คุณต้องการอัปโหลดข้อมูล OT ทั้งหมดขึ้น Google Sheets ใช่ไหม?")) return;
+
+  const year = parseInt(document.getElementById("year").value);
+  const month = parseInt(document.getElementById("month").value);
+
+  // ดึงข้อมูลทั้งหมดจาก localStorage
+  const key = `otData_${year}-${month + 1}`;
+  const localData = JSON.parse(localStorage.getItem(key) || "[]");
+
+  if (localData.length === 0) {
+    alert("ไม่มีข้อมูลในรอบนี้ที่ต้องอัปโหลด ❌");
+    return;
+  }
+
+  // เพิ่มข้อมูลปี/เดือนให้แต่ละแถว
+  const sendData = localData.map(item => ({
+    ...item,
+    year,
+    month
+  }));
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(sendData),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const result = await res.json();
+
+    if (result.status === "success") {
+      alert("✅ บันทึกข้อมูลขึ้น Google Sheets เรียบร้อยแล้ว!");
+    } else {
+      alert("⚠️ เกิดข้อผิดพลาด: " + result.message);
+    }
+  } catch (err) {
+    alert("❌ การเชื่อมต่อผิดพลาด: " + err.message);
+  }
+});
 </script>
 
 </body>
