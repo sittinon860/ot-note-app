@@ -69,12 +69,9 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
 <h2>โน็ตบันทึกชั่วโมงOT รอบวันที่16-15</h2>
 
 <div class="credit">ออกแบบเว็บนี้โดย: สิทธินน</div>
-<div class="version">เวอร์ชั่น 4.0 (ซิงก์ Google Drive)</div> 
-
-<div id="google-login-container">
+<div class="version">เวอร์ชั่น 4.0 (ซิงก์ Google Drive)</div> <div id="google-login-container">
     <div id="g_id_onload"
-         data-client_id="YOUR_CLIENT_ID" 
-         data-callback="handleCredentialResponse"
+         data-client_id="YOUR_CLIENT_ID" data-callback="handleCredentialResponse"
          data-auto_prompt="false">
     </div>
     <div class="g_id_signin"
@@ -166,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
     const FILE_NAME = "OT_Tracker_Data.json";
     const MIME_TYPE = 'application/json';
-    const GSI_CLIENT_ID = "YOUR_CLIENT_ID"; // 🌟 ตรวจสอบและเปลี่ยนเป็น Client ID ของคุณ
+    const GSI_CLIENT_ID = "YOUR_CLIENT_ID"; // 🌟 ต้องเปลี่ยนเป็น Client ID ของคุณ
 
     const today = new Date();
     const currentYear = today.getFullYear();
@@ -180,14 +177,7 @@ document.addEventListener("DOMContentLoaded", function(){
      */
     window.handleCredentialResponse = (response) => {
         if (response.credential) {
-            // โค้ดสำหรับดึงข้อมูลผู้ใช้จาก JWT Token
-            const base64Url = response.credential.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            const payload = JSON.parse(jsonPayload);
-            
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
             document.getElementById('user-info-display').textContent = `ยินดีต้อนรับ: ${payload.name} (${payload.email})`;
             document.getElementById('user-info-display').style.display = 'block';
         }
@@ -649,8 +639,65 @@ document.addEventListener("DOMContentLoaded", function(){
     window.onclick=function(event){ if(event.target==modal){ modal.style.display="none"; } }
 
     // เริ่มต้น: โหลดการตั้งค่าจาก Local Storage และสร้างตาราง
+    // หากมีการล็อกอินด้วย Google, syncDataFromCloud() จะโหลดทับ Local Storage ในภายหลัง
     createTable(); 
 });
 </script>
+<!-- เริ่มโค้ดล็อกอินด้วย Google -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<div id="g_id_onload"
+     data-client_id="601650521901-sgc4j0uedfafa39n4q9lqcs68cer5rd2.apps.googleusercontent.com"
+     data-context="signin"
+     data-ux_mode="popup"
+     data-login_uri="https://sittinon860.github.io/ot-note-app/"
+     data-auto_prompt="false">
+</div>
+
+<div class="g_id_signin"
+     data-type="standard"
+     data-shape="rectangular"
+     data-theme="outline"
+     data-text="signin_with"
+     data-size="large"
+     data-logo_alignment="left">
+</div>
+
+<script>
+  function handleCredentialResponse(response) {
+    // แปลง Token เป็นข้อมูลผู้ใช้
+    const data = jwt_decode(response.credential);
+    console.log(data);
+
+    // แสดงชื่อผู้ใช้บนหน้าเว็บ
+    document.body.innerHTML += `
+      <div style="margin-top:20px; font-size:18px; color:green;">
+        ✅ ยินดีต้อนรับคุณ: ${data.name} <br>
+        <img src="${data.picture}" width="80" style="border-radius:50%;">
+      </div>`;
+  }
+
+  // โหลดตัว decode token
+  function jwt_decode(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  }
+
+  window.onload = function () {
+    google.accounts.id.initialize({
+      client_id: "601650521901-sgc4j0uedfafa39n4q9lqcs68cer5rd2.apps.googleusercontent.com",
+      callback: handleCredentialResponse
+    });
+    google.accounts.id.renderButton(
+      document.querySelector(".g_id_signin"),
+      { theme: "outline", size: "large" }
+    );
+  };
+</script>
+<!-- จบโค้ดล็อกอินด้วย Google -->
 </body>
 </html>
