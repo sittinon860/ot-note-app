@@ -69,7 +69,7 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
 <h2>โน็ตบันทึกชั่วโมงOT รอบวันที่16-15</h2>
 
 <div class="credit">ออกแบบเว็บนี้โดย: สิทธินน</div>
-<div class="version">เวอร์ชั่น 4.0 (ซิงก์ Google Drive)</div> 
+<div class="version">เวอร์ชั่น 4.1 (ซิงก์ Google Drive)</div> 
 <div id="google-login-container">
     <div id="g_id_onload"
          data-client_id="601650521901-sgc4j0uedfafa39n4q9lqcs68cer5rd2.apps.googleusercontent.com" 
@@ -88,6 +88,7 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
     <button id="signout-button" style="display:none;">ออกจากระบบ Google</button>
     <div id="sync-status">สถานะ: ไม่ได้เชื่อมต่อ Google Drive</div>
 </div>
+
 <div class="instructions">
 <b>วิธีใช้งาน:</b><br>
 1. **ล็อกอินด้วย Google** เพื่อเปิดใช้งานการซิงก์ข้อมูลกับ Drive (ข้อมูลจะคงอยู่แม้ล้างประวัติ)<br>
@@ -143,7 +144,7 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
 </div>
 
 <script>
-// โหลดตัว decode token (ย้ายมาจากโค้ดชุดล่าง)
+// ฟังก์ชันสำหรับถอดรหัส JWT (ย้ายเข้ามาเพื่อรองรับการล็อกอิน)
 function jwt_decode(token) {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -152,7 +153,6 @@ function jwt_decode(token) {
     }).join(''));
     return JSON.parse(jsonPayload);
 }
-// ----------------------------------------------------
 
 document.addEventListener("DOMContentLoaded", function(){
     const dayNames=["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
@@ -171,27 +171,25 @@ document.addEventListener("DOMContentLoaded", function(){
 
     let userHolidays=[];
     let otChartInstance = null;
-    let driveFileId = null; // ID ของไฟล์ข้อมูล OT ใน Google Drive
-    let accessToken = null; // Access Token สำหรับ Google API
+    let driveFileId = null; 
+    let accessToken = null; 
 
     const FILE_NAME = "OT_Tracker_Data.json";
     const MIME_TYPE = 'application/json';
-    // 💡 Client ID ถูกตั้งค่าตรงนี้ และถูกดึงจาก data-client_id ใน HTML ด้านบน
     const GSI_CLIENT_ID = "601650521901-sgc4j0uedfafa39n4q9lqcs68cer5rd2.apps.googleusercontent.com"; 
 
     const today = new Date();
     const currentYear = today.getFullYear();
 
     // ----------------------------------------------------
-    // --- Google Sign-In & Drive API Functions (ปรับปรุง) ---
+    // --- Google Sign-In & Drive API Functions (แก้ไขล่าสุด) ---
     // ----------------------------------------------------
 
     /**
-     * @description Handle the response from Google Sign-In
+     * @description Handle the response from Google Sign-In and request Access Token for Drive API
      */
     window.handleCredentialResponse = (response) => {
         if (response.credential) {
-            // 💡 ใช้ jwt_decode ที่รวมเข้ามา
             const payload = jwt_decode(response.credential);
             document.getElementById('user-info-display').textContent = `ยินดีต้อนรับ: ${payload.name} (${payload.email})`;
             document.getElementById('user-info-display').style.display = 'block';
@@ -199,25 +197,35 @@ document.addEventListener("DOMContentLoaded", function(){
 
         const tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: GSI_CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file openid email profile',
+            // สโคป Drive API
+            scope: 'https://www.googleapis.com/auth/drive.file openid email profile', 
             callback: (tokenResponse) => {
                 if (tokenResponse && tokenResponse.access_token) {
                     accessToken = tokenResponse.access_token;
                     syncStatus.textContent = "สถานะ: กำลังเชื่อมต่อ Google Drive...";
-                    gapi.load('client', initClient);
+                    
+                    // โหลด GAPI Client และเริ่มซิงก์ Drive
+                    if (typeof gapi !== 'undefined' && gapi.client) {
+                         initClient(); 
+                    } else {
+                         gapi.load('client', initClient); 
+                    }
                 } else {
                     console.error("Failed to get access token for Drive.");
                     syncStatus.textContent = "สถานะ: ล้มเหลวในการเชื่อมต่อ Drive";
                 }
             },
         });
-        tokenClient.requestAccessToken();
+        
+        // 💡 บังคับให้เกิด Pop-up ขอสิทธิ์ Drive (prompt: 'consent')
+        // เพื่อให้แน่ใจว่าผู้ใช้ให้สิทธิ์ Drive API ในการเข้าสู่ระบบครั้งแรก
+        tokenClient.requestAccessToken({ prompt: 'consent' }); 
 
         document.querySelector('.g_id_signin').style.display = 'none';
         signoutBtn.style.display = 'block';
     }
     
-    // ... (ส่วนฟังก์ชัน initClient, searchFile, createFileOnDrive, loadDataFromDrive, saveDataToDrive, syncDataFromCloud ยังคงเหมือนเดิม) ...
+    // ฟังก์ชัน GAPI Client initialization
     function initClient() {
         gapi.client.init({}).then(function() {
             gapi.client.setToken({ access_token: accessToken });
@@ -227,6 +235,9 @@ document.addEventListener("DOMContentLoaded", function(){
             syncStatus.textContent = "สถานะ: ล้มเหลวในการเชื่อมต่อ GAPI";
         });
     }
+
+    // ฟังก์ชัน searchFile, createFileOnDrive, loadDataFromDrive, saveDataToDrive, syncDataFromCloud 
+    // และฟังก์ชันอื่นๆ ที่เหลืออยู่ในโค้ดหลัก จะยังคงเหมือนเดิม
 
     function searchFile() {
         const query = `name = '${FILE_NAME}' and trashed = false`;
@@ -300,11 +311,9 @@ document.addEventListener("DOMContentLoaded", function(){
         
         syncStatus.textContent = "สถานะ: กำลังอัปโหลดข้อมูล...";
         
-        // 1. รวบรวมข้อมูลทั้งหมดจาก LocalStorage
         const allLocalData = {};
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            // 💡 เราสนใจเฉพาะ key ที่เกี่ยวข้องกับข้อมูล OT และการตั้งค่าล่าสุดเท่านั้น
             if (key.startsWith('otData_') || key.startsWith('holidays_') || key.startsWith('lastSelected')) {
                 allLocalData[key] = localStorage.getItem(key);
             }
@@ -382,10 +391,9 @@ document.addEventListener("DOMContentLoaded", function(){
     });
 
     // ----------------------------------------------------
-    // --- Local Storage and Table Functions (ปรับปรุง) ---
+    // --- Local Storage and Table Functions (โค้ดเดิม) ---
     // ----------------------------------------------------
     
-    // โหลดค่าเดือน/ปีล่าสุดจาก localStorage
     function loadInitialSettings() {
         const savedMonth=localStorage.getItem("lastSelectedMonth");
         const savedYear=localStorage.getItem("lastSelectedYear");
@@ -394,7 +402,6 @@ document.addEventListener("DOMContentLoaded", function(){
         yearChartSelect.value = currentYear;
     }
     
-    // โหลด Dropdown เดือน/ปี (โค้ดเดิม)
     for(let m=0;m<12;m++){
         const opt=document.createElement("option"); opt.value=m;
         opt.text=new Date(2025,m).toLocaleString("th-TH",{month:"long"});
@@ -405,7 +412,7 @@ document.addEventListener("DOMContentLoaded", function(){
         const optChart=document.createElement("option"); optChart.value=y; optChart.text=y; yearChartSelect.appendChild(optChart);
     }
     
-    loadInitialSettings(); // โหลดการตั้งค่าเริ่มต้น
+    loadInitialSettings(); 
 
     function getKeyData(year, month){ 
         if(typeof year === 'undefined') year = yearSelect.value;
@@ -414,7 +421,6 @@ document.addEventListener("DOMContentLoaded", function(){
     }
     function getKeyHoliday(){return `holidays_${yearSelect.value}-${parseInt(monthSelect.value)+1}`;}
 
-    // ----------------------------------------------------
     function loadHolidays(){
         const saved = JSON.parse(localStorage.getItem(getKeyHoliday()) || "[]");
         userHolidays = saved.map(d => parseInt(d));
@@ -425,7 +431,7 @@ document.addEventListener("DOMContentLoaded", function(){
         userHolidays = Array.from(checkboxes).filter(c=>c.checked).map(cb=>parseInt(cb.value));
         localStorage.setItem(getKeyHoliday(), JSON.stringify(userHolidays));
         createTable();
-        saveDataToDrive(); // 💡 อัปเดต Drive
+        saveDataToDrive(); 
     }));
 
     document.getElementById("resetBtn").addEventListener("click", () => {
@@ -433,13 +439,11 @@ document.addEventListener("DOMContentLoaded", function(){
             localStorage.removeItem(getKeyData()); 
             localStorage.removeItem(getKeyHoliday());
             createTable();
-            saveDataToDrive(); // 💡 อัปเดต Drive
+            saveDataToDrive(); 
         }
     });
 
-    // ----------------------------------------------------
     function createTable(){
-        // โค้ดสร้างตารางส่วนใหญ่เหมือนเดิม...
         tbody.innerHTML="";
 
         loadHolidays();
@@ -449,7 +453,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
         localStorage.setItem("lastSelectedMonth",currentMonth);
         localStorage.setItem("lastSelectedYear",currentYear);
-        saveDataToDrive(); // 💡 อัปเดต Drive เมื่อเปลี่ยนเดือน/ปี (บันทึกการตั้งค่าล่าสุด)
+        saveDataToDrive(); 
 
         let startDate = new Date(currentYear, currentMonth, 16);
         let endMonth = currentMonth + 1; 
@@ -466,7 +470,6 @@ document.addEventListener("DOMContentLoaded", function(){
             const thYear = current.getFullYear()+543;
             const formattedDate = `${current.getDate().toString().padStart(2,'0')}/${(current.getMonth()+1).toString().padStart(2,'0')}/${thYear}`;
 
-            // ... โค้ดสร้าง TD และ Input ...
             const tdDate = document.createElement("td"); tdDate.textContent = formattedDate; tr.appendChild(tdDate);
             const tdDay = document.createElement("td"); tdDay.textContent = dayNames[day]; tr.appendChild(tdDay);
             const tdShift = document.createElement("td"); tdShift.classList.add("td-shift");
@@ -484,7 +487,6 @@ document.addEventListener("DOMContentLoaded", function(){
             if(userHolidays.includes(day)) tr.classList.add("holiday-personal");
             tbody.appendChild(tr);
 
-            // โหลดข้อมูลเก่า
             const idx = savedData.findIndex(d => d.date === formattedDate);
             if(idx >= 0){
                 const d = savedData[idx];
@@ -496,7 +498,6 @@ document.addEventListener("DOMContentLoaded", function(){
                 if(d.shift=="HD1"||d.shift=="HN1"){ tr.classList.remove("holiday-personal"); tr.classList.add("holiday-ot"); }
             }
 
-            // Event change shift
             selectShift.addEventListener("change", ()=>{
                 shiftLabel.textContent = selectShift.value;
                 if(selectShift.value){ inputHours.style.display="inline-block"; } else { inputHours.style.display="none"; inputHours.value=""; }
@@ -507,9 +508,7 @@ document.addEventListener("DOMContentLoaded", function(){
             });
 
             inputHours.addEventListener("input", ()=>{ updateRow(tr, selectShift, inputHours, current); });
-            // 💡 เพิ่ม Event สำหรับ หมายเหตุ
             inputNote.addEventListener("input", ()=>{ saveData(); saveDataToDrive(); });
-
 
             current.setDate(current.getDate()+1);
         }
@@ -527,7 +526,7 @@ document.addEventListener("DOMContentLoaded", function(){
         if(hours>0){
             if(shift=="N1"||shift=="D1"){ 
                 ot15 = hours; startTime = (shift=="N1")?"03:45":"15:45"; 
-                if(hours>0 && hours<=3){ tdNote.value="ตัดกลับ"; } else if(tdNote.value=="ตัดกลับ"){ tdNote.value=""; } // ล้างหมายเหตุถ้าชั่วโมงเกิน 3
+                if(hours>0 && hours<=3){ tdNote.value="ตัดกลับ"; } else if(tdNote.value=="ตัดกลับ"){ tdNote.value=""; } 
             }
             else if(shift=="HD1"||shift=="HN1"){ 
                 startTime=(shift=="HD1")?"07:45":"19:45"; 
@@ -536,7 +535,6 @@ document.addEventListener("DOMContentLoaded", function(){
             }
             if(startTime){ tdTime.textContent=`${startTime} – ${addHours(startTime,hours)}`; }
         } else {
-             // Logic สำหรับล้างค่าและหมายเหตุ
              if((shift=="HD1"||shift=="HN1") && tdNote.value!=""){ tdNote.value=""; }
              else if((shift=="N1"||shift=="D1") && tdNote.value!=""){ tdNote.value=""; }
         }
@@ -548,17 +546,16 @@ document.addEventListener("DOMContentLoaded", function(){
 
         saveData(); 
         updateSummary();
-        saveDataToDrive(); // 💡 อัปเดต Drive
+        saveDataToDrive(); 
     }
 
     function addHours(start,h){ 
         let [hh,mm] = start.split(":").map(Number); 
         let totalMinutes = (hh*60) + mm + Math.round(h*60); 
-        let days = Math.floor(totalMinutes / (24*60)); // นับวันที่ข้ามไป
+        let days = Math.floor(totalMinutes / (24*60)); 
         let newH = Math.floor(totalMinutes/60)%24;
         let newM = totalMinutes%60;
         let timeStr = `${newH.toString().padStart(2,'0')}:${newM.toString().padStart(2,'0')}`;
-        // แสดง (+Xd) หากข้ามวัน
         return (days > 0) ? `${timeStr} (+${days}d)` : timeStr;
     }
 
@@ -654,8 +651,6 @@ document.addEventListener("DOMContentLoaded", function(){
     span.onclick=function(){ modal.style.display="none"; }
     window.onclick=function(event){ if(event.target==modal){ modal.style.display="none"; } }
 
-    // เริ่มต้น: โหลดการตั้งค่าจาก Local Storage และสร้างตาราง
-    // หากมีการล็อกอินด้วย Google, syncDataFromCloud() จะโหลดทับ Local Storage ในภายหลัง
     createTable(); 
 });
 </script>
