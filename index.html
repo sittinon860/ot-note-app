@@ -17,7 +17,7 @@
 </script>  
 
 <style>
-/* CSS หลัก */
+/* CSS หลัก (คงเดิม) */
 * { box-sizing: border-box; }
 body { font-family: Arial,sans-serif; margin:5px; background:linear-gradient(135deg,#f0f4ff,#d9e8ff);}
 h2{ text-align:center; color:#0d47a1; text-shadow:1px 1px 2px #aaa; margin-bottom:5px;}
@@ -72,7 +72,7 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
 <div class="version">เวอร์ชั่น 4.1 (ซิงก์ Google Drive)</div> 
 <div id="google-login-container">
     <div id="g_id_onload"
-         data-client_id="601650521901-sgc4j0uedfafa39n4q9lqcs68cer5rd2.apps.googleusercontent.com" 
+         data-client_id="524833148663-so092vm1d7pvhc7o16md17mktetp9dhm.apps.googleusercontent.com" 
          data-callback="handleCredentialResponse"
          data-auto_prompt="false">
     </div>
@@ -144,7 +144,7 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
 </div>
 
 <script>
-// ฟังก์ชันสำหรับถอดรหัส JWT (ย้ายเข้ามาเพื่อรองรับการล็อกอิน)
+// ฟังก์ชันสำหรับถอดรหัส JWT
 function jwt_decode(token) {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -176,13 +176,14 @@ document.addEventListener("DOMContentLoaded", function(){
 
     const FILE_NAME = "OT_Tracker_Data.json";
     const MIME_TYPE = 'application/json';
-    const GSI_CLIENT_ID = "601650521901-sgc4j0uedfafa39n4q9lqcs68cer5rd2.apps.googleusercontent.com"; 
+    // 💡 Client ID ใหม่ที่ได้จาก Google Cloud Console
+    const GSI_CLIENT_ID = "524833148663-so092vm1d7pvhc7o16md17mktetp9dhm.apps.googleusercontent.com"; 
 
     const today = new Date();
     const currentYear = today.getFullYear();
 
     // ----------------------------------------------------
-    // --- Google Sign-In & Drive API Functions (แก้ไขล่าสุด) ---
+    // --- Google Sign-In & Drive API Functions (ใช้การแก้ไขล่าสุด) ---
     // ----------------------------------------------------
 
     /**
@@ -218,7 +219,6 @@ document.addEventListener("DOMContentLoaded", function(){
         });
         
         // 💡 บังคับให้เกิด Pop-up ขอสิทธิ์ Drive (prompt: 'consent')
-        // เพื่อให้แน่ใจว่าผู้ใช้ให้สิทธิ์ Drive API ในการเข้าสู่ระบบครั้งแรก
         tokenClient.requestAccessToken({ prompt: 'consent' }); 
 
         document.querySelector('.g_id_signin').style.display = 'none';
@@ -235,9 +235,6 @@ document.addEventListener("DOMContentLoaded", function(){
             syncStatus.textContent = "สถานะ: ล้มเหลวในการเชื่อมต่อ GAPI";
         });
     }
-
-    // ฟังก์ชัน searchFile, createFileOnDrive, loadDataFromDrive, saveDataToDrive, syncDataFromCloud 
-    // และฟังก์ชันอื่นๆ ที่เหลืออยู่ในโค้ดหลัก จะยังคงเหมือนเดิม
 
     function searchFile() {
         const query = `name = '${FILE_NAME}' and trashed = false`;
@@ -391,7 +388,7 @@ document.addEventListener("DOMContentLoaded", function(){
     });
 
     // ----------------------------------------------------
-    // --- Local Storage and Table Functions (โค้ดเดิม) ---
+    // --- Local Storage and Table Functions (คงเดิม) ---
     // ----------------------------------------------------
     
     function loadInitialSettings() {
@@ -583,7 +580,7 @@ document.addEventListener("DOMContentLoaded", function(){
     }
 
     // ----------------------------------------------------
-    // กราฟ OT รายปี (โค้ดเดิม)
+    // กราฟ OT รายปี (คงเดิม)
     // ----------------------------------------------------
     function getMonthlySummaryData(selectedYear){
         const data=[]; const labels=[];
