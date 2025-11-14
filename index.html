@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>โน็ตบันทึกชั่วโมงOT รอบวันที่16-15 (ดู OT รายปี)</title>
+<title>โน็ตบันทึกชั่วโมงOT รอบวันที่16-15 (OT Manager)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-B2CJVLLCLN"></script>
@@ -15,7 +15,7 @@
 </script>  
 
 <style>
-/* CSS หลัก */
+/* -------------------- CSS หลัก -------------------- */
 * { box-sizing: border-box; }
 body { font-family: Arial,sans-serif; margin:5px; background:linear-gradient(135deg,#f0f4ff,#d9e8ff);}
 h2{ text-align:center; color:#0d47a1; text-shadow:1px 1px 2px #aaa; margin-bottom:5px;}
@@ -23,15 +23,23 @@ h2{ text-align:center; color:#0d47a1; text-shadow:1px 1px 2px #aaa; margin-botto
 .credit{ text-align:center; font-size:11px; color:#555; margin-bottom:5px;}
 .version{ text-align:center; font-size:13px; color:#ff6f00; font-weight:bold; margin-bottom:10px; text-shadow:1px 1px 2px #aaa;}
 .controls{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; justify-content:center; margin-bottom:5px;}
+
 /* สไตล์ปุ่ม */
 select,button{ padding:5px 8px; font-size:13px; border-radius:8px; border:1px solid #1976d2; background:linear-gradient(to bottom,#42a5f5,#1e88e5); color:white; cursor:pointer; box-shadow:2px 2px 5px rgba(0,0,0,0.2); transition:transform 0.1s;}
 select:hover,button:hover{ transform:translateY(-2px);}
+
 /* ปุ่มกราฟ */
 #showChartBtn{ background:linear-gradient(to bottom,#ff9800,#f57c00); border:1px solid #e65100; }
 #showChartBtn:hover{ transform:translateY(-2px); background:linear-gradient(to bottom,#f57c00,#e65100); }
-/* ปุ่มล้างข้อมูล */
+/* ปุ่มล้างข้อมูลเดือนนี้ */
 #resetBtn{ background:linear-gradient(to bottom,#f44336,#d32f2f); border:1px solid #c62828; }
 #resetBtn:hover{ transform:translateY(-2px); background:linear-gradient(to bottom,#d32f2f,#c62828); }
+/* ปุ่มดาวน์โหลด */
+#downloadBtn{ background:linear-gradient(to bottom,#4caf50,#388e3c); border:1px solid #1b5e20; }
+#downloadBtn:hover{ transform:translateY(-2px); background:linear-gradient(to bottom,#388e3c,#1b5e20); }
+/* ปุ่มคืนข้อมูล */
+#uploadBtn{ background:linear-gradient(to bottom,#9c27b0,#7b1fa2); border:1px solid #4a148c; }
+#uploadBtn:hover{ transform:translateY(-2px); background:linear-gradient(to bottom,#7b1fa2,#4a148c); }
 
 .checkbox-container{ display:flex; flex-wrap:wrap; justify-content:center; gap:3px; font-size:12px; margin-bottom:5px;}
 .summary{ text-align:center; background:linear-gradient(to right,#a8ff78,#78ffd6); padding:5px 10px; border-radius:12px; font-weight:bold; font-size:12px; box-shadow:1px 2px 6px rgba(0,0,0,0.2); margin-bottom:10px;}
@@ -62,16 +70,16 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
 <h2>โน็ตบันทึกชั่วโมงOT รอบวันที่16-15</h2>
 
 <div class="credit">ออกแบบเว็บนี้โดย: สิทธินน</div>
-<div class="version">เวอร์ชั่น 3</div>
+<div class="version">เวอร์ชั่น 3.1 (พร้อมระบบจัดการข้อมูล)</div>
 
 <div class="instructions">
 <b>วิธีใช้งาน:</b><br>
 1. เลือกวันหยุดส่วนตัวที่ต้องการ<br>
 2. เลือกกะ (N1, D1, HD1, HN1)<br>
-3. กรอกจำนวนชั่วโมง OT (1–3 ชั่วโมง วันธรรมดา จะขึ้นหมายเหตุ "ตัดกลับ")<br>
+3. กรอกจำนวนชั่วโมง OT (1–3 ชั่วโมง วันธรรมดา จะขึ้นหมายเหตุ **"ตัดกลับ"**)<br>
 4. ระบบคำนวณ OT1 / OT1.5 / OT3 อัตโนมัติ<br>
-5. กด "ล้างข้อมูลเดือนนี้" เพื่อรีเซ็ตเฉพาะรอบเดือนที่เลือก<br>
-6. ข้อมูลทั้งหมดบันทึกอัตโนมัติใน LocalStorage
+5. กด **"ล้างข้อมูลเดือนนี้"** เพื่อรีเซ็ตเฉพาะรอบเดือนที่เลือก<br>
+6. 🗃️ ใช้ **"ดาวน์โหลดข้อมูล" / "คืนข้อมูล"** เพื่อสำรองหรือนำเข้าประวัติ OT ทั้งหมด (สำคัญมากหากคุณล้างประวัติเบราว์เซอร์)
 </div>
 
 <div class="controls">
@@ -79,6 +87,9 @@ background:white url('data:image/svg+xml;utf8,<svg fill="gray" height="12" viewB
 ปี: <select id="year"></select>
 <button id="resetBtn">ล้างข้อมูลเดือนนี้</button>
 <button id="showChartBtn">สรุป OT รายปี</button>
+<button id="downloadBtn">ดาวน์โหลดข้อมูล</button>
+<button id="uploadBtn">คืนข้อมูล</button>
+<input type="file" id="fileInput" accept=".json" style="display:none;">
 </div>
 
 <div class="checkbox-container">
@@ -134,6 +145,11 @@ document.addEventListener("DOMContentLoaded", function(){
     let userHolidays=[];
     let otChartInstance = null;
 
+    // --- ฟังก์ชันการจัดการข้อมูล (Backup/Restore) ---
+    const downloadBtn = document.getElementById("downloadBtn");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const fileInput = document.getElementById("fileInput");
+
     const today = new Date();
     const currentYear = today.getFullYear();
 
@@ -185,16 +201,102 @@ document.addEventListener("DOMContentLoaded", function(){
     });
 
     // ----------------------------------------------------
+    // 1. ดาวน์โหลดข้อมูล (Backup)
+    downloadBtn.addEventListener("click", () => {
+        const allData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            // เก็บทุก key ที่เกี่ยวข้องกับข้อมูล OT และการตั้งค่า
+            if (key.startsWith("otData_") || key.startsWith("holidays_") || key.startsWith("lastSelected")) {
+                try {
+                    // พยายามแปลงเป็น JSON ก่อน หากล้มเหลวให้เก็บเป็น string
+                    allData[key] = JSON.parse(localStorage.getItem(key));
+                } catch (e) {
+                    allData[key] = localStorage.getItem(key);
+                }
+            }
+        }
+        if (Object.keys(allData).length === 0) {
+            alert("ไม่พบข้อมูล OT ที่จะดาวน์โหลด");
+            return;
+        }
+
+        const dataStr = JSON.stringify(allData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `OT_Backup_${currentYear}-${today.getMonth() + 1}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert("ดาวน์โหลดไฟล์สำรองข้อมูล OT เรียบร้อยแล้ว (ไฟล์อยู่ในโฟลเดอร์ดาวน์โหลด/แอพไฟล์)");
+    });
+
+    // 2. คืนข้อมูล (Restore)
+    uploadBtn.addEventListener("click", () => {
+        // เปิดหน้าต่างเลือกไฟล์
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.name.endsWith(".json")) {
+            alert("โปรดเลือกไฟล์นามสกุล .json ที่เคยสำรองข้อมูลไว้");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (typeof importedData !== 'object' || importedData === null) {
+                    throw new Error("โครงสร้างข้อมูลไม่ถูกต้อง");
+                }
+
+                if (!confirm("คำเตือน: ข้อมูล OT ปัจจุบันของคุณจะถูกเขียนทับด้วยข้อมูลในไฟล์ที่คุณอัปโหลด คุณแน่ใจหรือไม่?")) {
+                    return;
+                }
+
+                let importedCount = 0;
+                // ล้างข้อมูลเก่าก่อน (เฉพาะข้อมูล OT และการตั้งค่า)
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith("otData_") || key.startsWith("holidays_") || key.startsWith("lastSelected")) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                
+                // นำเข้าข้อมูลใหม่
+                for (const key in importedData) {
+                    const valueToStore = (typeof importedData[key] === 'object' && importedData[key] !== null) 
+                                         ? JSON.stringify(importedData[key]) 
+                                         : importedData[key];
+                    localStorage.setItem(key, valueToStore);
+                    importedCount++;
+                }
+                alert(`นำเข้าข้อมูลสำเร็จ: ${importedCount} รายการ ข้อมูลถูกกู้คืนแล้ว`);
+                createTable(); // โหลดตารางใหม่
+                fileInput.value = ''; // ล้างค่าใน file input
+            } catch (error) {
+                alert(`เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ${error.message}. โปรดตรวจสอบไฟล์ JSON ว่าถูกต้อง`);
+                fileInput.value = '';
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    // ----------------------------------------------------
     function createTable(){
         tbody.innerHTML="";
-
-        // โหลดวันหยุดส่วนตัวก่อน
         loadHolidays();
-
         const currentMonth = parseInt(monthSelect.value);
         const currentYear = parseInt(yearSelect.value);
-
-        // บันทึกค่าเดือน/ปีล่าสุด
         localStorage.setItem("lastSelectedMonth",currentMonth);
         localStorage.setItem("lastSelectedYear",currentYear);
 
@@ -213,33 +315,24 @@ document.addEventListener("DOMContentLoaded", function(){
             const thYear = current.getFullYear()+543;
             const formattedDate = `${current.getDate().toString().padStart(2,'0')}/${(current.getMonth()+1).toString().padStart(2,'0')}/${thYear}`;
 
-            // วันที่
             const tdDate = document.createElement("td"); tdDate.textContent = formattedDate; tr.appendChild(tdDate);
-            // วัน
             const tdDay = document.createElement("td"); tdDay.textContent = dayNames[day]; tr.appendChild(tdDay);
-            // กะ
             const tdShift = document.createElement("td"); tdShift.classList.add("td-shift");
             const shiftLabel = document.createElement("div"); shiftLabel.classList.add("shift-label"); tdShift.appendChild(shiftLabel);
             const selectShift = document.createElement("select");
             ["","N1","D1","HD1","HN1"].forEach(v=>{ const opt=document.createElement("option"); opt.value=v; opt.text=v; selectShift.appendChild(opt); });
             tdShift.appendChild(selectShift); tr.appendChild(tdShift);
-            // ชั่วโมง OT
             const tdHours = document.createElement("td");
             const inputHours = document.createElement("input"); inputHours.type="number"; inputHours.min=0; inputHours.max=12; inputHours.step=0.5; inputHours.style.display="none";
             tdHours.appendChild(inputHours); tr.appendChild(tdHours);
-            // OT1 / OT1.5 / OT3
             const tdOT1=document.createElement("td"), tdOT15=document.createElement("td"), tdOT3=document.createElement("td"); tr.appendChild(tdOT1); tr.appendChild(tdOT15); tr.appendChild(tdOT3);
-            // เวลาเข้า-ออก
             const tdTime=document.createElement("td"); tr.appendChild(tdTime);
-            // หมายเหตุ
             const tdNote=document.createElement("td"); const inputNote=document.createElement("input"); inputNote.type="text"; tdNote.appendChild(inputNote); tr.appendChild(tdNote);
 
-            // ✅ แสดงสีวันหยุดส่วนตัว
             if(userHolidays.includes(day)) tr.classList.add("holiday-personal");
 
             tbody.appendChild(tr);
 
-            // โหลดข้อมูลเก่า
             const idx = savedData.findIndex(d => d.date === formattedDate);
             if(idx >= 0){
                 const d = savedData[idx];
@@ -251,7 +344,6 @@ document.addEventListener("DOMContentLoaded", function(){
                 if(d.shift=="HD1"||d.shift=="HN1"){ tr.classList.remove("holiday-personal"); tr.classList.add("holiday-ot"); }
             }
 
-            // Event change shift
             selectShift.addEventListener("change", ()=>{
                 shiftLabel.textContent = selectShift.value;
                 if(selectShift.value){ inputHours.style.display="inline-block"; } else { inputHours.style.display="none"; inputHours.value=""; }
